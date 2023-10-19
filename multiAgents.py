@@ -40,7 +40,7 @@ class ReflexAgent(Agent):
         """
         # Collect legal moves and successor states
         legalMoves = gameState.getLegalActions()
-
+        
         # Choose one of the best actions
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
         bestScore = max(scores)
@@ -154,7 +154,73 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         "*** TTU CS 5368 Fall 2023 YOUR CODE HERE ***"
         "PS. It is okay to define your own new functions. For example, value, min_function,max_function"
+        result = self.getValue(gameState,0,0)
+        return result[1]
         util.raiseNotDefined()
+    
+    def getValue(self, gameState,index,depth):
+        #Return a tuple of [score,action]
+        #terminal state
+        if len(gameState.getLegalActions(index)) == 0 or depth == self.depth:
+            return gameState.getScore(),""
+
+        #When pacman has index of 0, i.e max agent
+        if index == 0:
+            return self.max_function(gameState, index, depth)
+        else:
+            #min agent
+            return self.min_function(gameState, index, depth)
+    
+    def max_function(self, gameState, index, depth):
+        #Returns the maximum value-action for the max agent
+        possibleMoves = gameState.getLegalActions(index)
+        maxValue = float("-inf")
+        maxAction = ""
+
+        for action in possibleMoves:
+            successor = gameState.generateSuccessor(index, action)
+            successor_index = index + 1
+            successor_depth = depth
+
+            #updating the succesor agent index and depth
+            if successor_index == gameState.getNumAgents():
+                successor_index = 0
+                successor_depth +=1
+            current_value = self.getValue(successor, successor_index,successor_depth)[0]
+
+            if current_value > maxValue:
+                maxValue = current_value
+                maxAction = action
+        return maxValue, maxAction
+
+    def min_function(self, gameState, index, depth):
+        #Min utility value action for min agent
+        possibleMoves = gameState.getLegalActions(index)
+        
+        minValue = float('inf')
+        minAction = ""
+
+        for action in possibleMoves:
+            successor = gameState.generateSuccessor(index, action)
+            successor_index = index + 1
+            successor_depth = depth
+
+            #update agent's index
+            if successor_index == gameState.getNumAgents():
+                successor_index = 0
+                successor_depth +=1
+            
+            current_value = self.getValue(successor, successor_index, successor_depth)[0]
+
+            if current_value < minValue:
+                minValue = current_value
+                minAction = action
+        return minValue, minAction
+
+
+            
+
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -167,7 +233,90 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         "*** TTU CS 5368 Fall 2023 YOUR CODE HERE ***"
         "PS. It is okay to define your own new functions. For example, value, min_function,max_function"
+        result = self.getBestActionAndScore(gameState, 0, 0, float("-inf"),float("inf"))
+
+        return result[0]
         util.raiseNotDefined()
+    def getBestActionAndScore(self,gameState,index, depth, alpha, beta):
+        #Returns a tuple of action and state
+
+        #checking for terminal state
+        if len(gameState.getLegalActions(index)) == 0 or depth == self.depth:
+            return "",gameState.getScore()
+        
+        #for max-agent, pacman has index of 0
+        if index == 0:
+            return self.maxValue(gameState,index,depth,alpha,beta)
+        else:
+            return self.minValue(gameState,index,depth,alpha,beta)
+    
+    def maxValue(self,gameState, index, depth,alpha,beta):
+
+        possibleMoves = gameState.getLegalActions(index)
+        maxValue = float("-inf")
+        maxAction= ""
+
+        for action in possibleMoves:
+            successor = gameState.generateSuccessor(index,action)
+            successor_index = index + 1
+            successor_depth = depth
+
+            #update successor agents
+            if successor_index == gameState.getNumAgents():
+                successor_index = 0
+                successor_depth += 1
+
+            #Calculate the action-score for the current successor
+            
+            currentAction, currentValue \
+                = self.getBestActionAndScore(successor, successor_index, successor_depth, alpha, beta)
+
+            #updating maxvalue and maxaction for the max agent
+            if currentValue > maxValue:
+                maxValue = currentValue
+                maxAction = action
+            
+            #update value of alpha for the maximizer
+            alpha = max(alpha, maxValue)
+
+            if maxValue > beta:
+                return maxAction,maxValue
+        return maxAction, maxValue
+    
+    def minValue(self,gameState, index, depth, alpha, beta):
+        #returns utility action,score for min-agent without alpha-beta prunning
+
+        possibleMoves = gameState.getLegalActions(index)
+        minValue = float("inf")
+        minAction = ""
+
+        for action in possibleMoves:
+            successor = gameState.generateSuccessor(index,action)
+            successor_index = index + 1
+            successor_depth = depth
+
+            #Update the successor agent index nd depth
+
+            if successor_index == gameState.getNumAgents():
+                successor_index = 0
+                successor_depth += 1
+
+            #action score for the successor
+            currentAction, currentValue \
+                = self.getBestActionAndScore(successor, successor_index, successor_depth, alpha, beta)
+
+                #Update the min and max for minimizer
+            if currentValue < minValue:
+                minValue = currentValue
+                minAction = action
+
+            #update beta for minimizer
+            beta = min(beta,minValue)
+
+            if minValue < alpha:
+                return minAction,minValue
+
+        return minAction,minValue
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
