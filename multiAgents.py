@@ -332,7 +332,63 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         """
         "*** TTU CS 5368 Fall 2023 YOUR CODE HERE ***"
         "PS. It is okay to define your own new functions. For example, value, min_function,max_function"
+        action,score = self.getValue(gameState,0,0)
+
+        return action
         util.raiseNotDefined()
+
+    def getValue(self,game_state,index,depth):
+        #checks for terminal states
+        if len(game_state.getLegalActions(index)) == 0 or depth == self.depth:
+            return "", self.evaluationFunction(game_state)
+
+        if index == 0 : #for pacman
+            return self.maxValue(game_state,index,depth)
+        else:
+            return self.expectedValue(game_state,index,depth)
+    
+    def maxValue(self,game_state, index, depth):
+        #Maximum utility for max-agent
+        possibleMoves = game_state.getLegalActions(index)
+        maxValue = float("-inf")
+        maxAction = ""
+
+        for action in possibleMoves:
+            successor = game_state.generateSuccessor(index, action)
+            successor_index= index + 1
+            successor_depth = depth
+
+            if successor_index == game_state.getNumAgents():
+                successor_index = 0
+                successor_depth +=1
+            
+            currentAction, currentValue = self.getValue(successor,successor_index,successor_depth)
+
+            if currentValue > maxValue:
+                maxValue = currentValue
+                maxAction = action
+        return maxAction, maxValue
+
+    def expectedValue(self,game_state,index,depth):
+        possibleMoves = game_state.getLegalActions(index)
+        expectedValue = 0
+        expectedAction = ""
+
+        successorProb = 1.0/len(possibleMoves)
+
+        for action in possibleMoves:
+            successor = game_state.generateSuccessor(index,action)
+            successor_index = index + 1
+            successor_depth = depth
+
+            if successor_index == game_state.getNumAgents():
+                successor_index = 0
+                successor_depth +=1
+            
+            currentAction, currentValue = self.getValue(successor,successor_index,successor_depth)
+
+            expectedValue += successorProb * currentValue
+        return expectedAction,expectedValue
 
 def betterEvaluationFunction(currentGameState):
     """
@@ -342,6 +398,7 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** TTU CS 5368 Fall 2023 YOUR CODE HERE ***"
+   
     util.raiseNotDefined()
 
 # Abbreviation
