@@ -74,25 +74,17 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** TTU CS 5368 Fall 2023 YOUR CODE HERE ***"
-        score = 0
-        ghostPosition = newGhostStates[0].configuration.pos
-        closetGhost = manhattanDistance(newPos, ghostPosition)
-
         newFoodPositions = newFood.asList()
-        foodDistances = [manhattanDistance(newPos, foodPositions) for foodPositions in newFoodPositions]
+        newGhostPosition = successorGameState.getGhostPositions()
+        closestFood = float("inf")
 
-        if len(foodDistances)==0:
-            return 0
+        for food in newFoodPositions:
+            closestFood = min(closestFood,manhattanDistance(newPos,food))
 
-        closestFood = min(foodDistances)
-
-        if action == 'Stop':
-            score-=50
-
-        return successorGameState.getScore() + closetGhost /(closestFood * 10) + score
-        
-        util.raiseNotDefined()
-        return successorGameState.getScore()
+        for ghost in newGhostPosition:
+            if (manhattanDistance(newPos,ghost)< 2):
+                return -float('inf')
+        return successorGameState.getScore() + 1.0 /closestFood
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -398,7 +390,35 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** TTU CS 5368 Fall 2023 YOUR CODE HERE ***"
-   
+
+    position_of_pacman = currentGameState.getPacmanPosition()
+    position_of_ghost = currentGameState.getGhostPositions()
+
+    list_of_foods = currentGameState.getFood().asList()
+    count_of_food =len(list_of_foods)
+    capsuleCount = len(currentGameState.getCapsules())
+    closestFood = 1
+
+    score = currentGameState.getScore()
+
+    #distnace of pacman to all food 
+    foodDistance = [manhattanDistance(position_of_pacman, food_position) for food_position in list_of_foods]
+
+    #value of closest food if any left
+    if count_of_food > 0:
+        closestFood = min(foodDistance)
+
+    #Distance of pacamn to ghost
+    for ghost_position in position_of_ghost:
+        ghost_distance = manhattanDistance(position_of_pacman,ghost_position)
+
+        #check is ghost is too close
+        if ghost_distance < 2 :
+            closestFood = 99999
+
+        features = [1.0 / closestFood, score,count_of_food,capsuleCount]
+        weights = [10,200,-100,-10]
+    return sum([feature * weight for feature, weight in zip(features,weights)])   
     util.raiseNotDefined()
 
 # Abbreviation
